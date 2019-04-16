@@ -1,0 +1,89 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.dSYM/
+
+# Xcode
+.DS_Store
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcworkspace
+!default.xcworkspace
+xcuserdata
+profile
+*.moved-aside
+DerivedData
+.idea/
+# Pods - for those of you who use CocoaPods
+Pods
+
+# Visual Studio Code
+.vscode/
+browse.VC.db
+
+# Visual C++
+Debug/
+Release/
+ipch/
+*.pdb
+*.suo
+*.i
+*.ilk
+*.sdf
+*.obj
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.lib
+*.sbr
+*.opensdf
+*.unsuccessfulbuild
+*.nativecodeanalysis.xml
+
+# Generated files
+*.tab.?pp
+
+# Miscellaneous
+*.log

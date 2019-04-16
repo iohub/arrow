@@ -1,0 +1,119 @@
+language: cpp
+branches:
+  only:
+  - gh-pages
+  - /.*/
+
+matrix:
+  include:
+
+    # Linux clang
+    - os: linux
+      sudo: required
+      env: BUILD_TYPE=Debug SANITIZE=undefined CMAKE_GENERATOR="Unix Makefiles"
+      compiler: clang
+
+    - os: linux
+      sudo: required
+      env: BUILD_TYPE=Debug SANITIZE=address CMAKE_GENERATOR="Unix Makefiles"
+      compiler: clang
+
+    - os: linux
+      sudo: required
+      env: BUILD_TYPE=Release CMAKE_GENERATOR="Unix Makefiles"
+      compiler: clang
+
+    # Linux gcc
+    - os: linux
+      sudo: false
+      env: BUILD_TYPE=Debug SANITIZE=undefined CMAKE_GENERATOR="Unix Makefiles"
+      compiler: gcc
+
+    - os: linux
+      sudo: required
+      env: BUILD_TYPE=Debug SANITIZE=address CMAKE_GENERATOR="Unix Makefiles"
+      compiler: gcc
+
+    - os: linux
+      sudo: false
+      env: BUILD_TYPE=Release CMAKE_GENERATOR="Unix Makefiles"
+      compiler: gcc
+
+    # OSX clang
+    - os: osx
+      osx_image: xcode10
+      env: BUILD_TYPE=Debug CMAKE_GENERATOR="Xcode"
+      compiler: clang
+
+    - os: osx
+      osx_image: xcode10
+      env: BUILD_TYPE=Release CMAKE_GENERATOR="Xcode"
+      compiler: clang
+
+    # OSX gcc
+    - os: osx
+      osx_image: xcode10
+      env: BUILD_TYPE=Release CMAKE_GENERATOR="Xcode"
+      compiler: gcc
+
+    - os: osx
+      osx_image: xcode10
+      env: BUILD_TYPE=Debug CMAKE_GENERATOR="Xcode"
+      compiler: gcc
+
+
+
+sudo: required
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "gfyEnfki5JHvDiRLgW20BnOUvY19Ok7ShgRAyHaRdrpKyIizufNE9XCRceyqR0vGGo24JPcGUoa4kvrevCxRLm4W2vqQBY5nQDUb0dkaZhhTe50OnVbvTOfbtjy7fGs065RakEXKyiIUTSFi3MfDmyku6dyt7XixxaSZT2zGyx4EJwlIABCc6toNRRKj1ZX+51Dl9NtStJ1oxdhY5LQ18PGxtvCe4B3iAaM0cQaGRHzOo13BUDVGoZ34mjsJdE3lV+SxQ+vIzCAp+kEjpjJ5kBiD/vFNngoaGIR4ZQwrH2dJF9EW6F/w4dIs/BmFyCgwX0Lo7mKGFoiJ/rDsPzvY2gopcY0DqTSPb3pGuKf0P4PVLqkeH2B2dBQaWEDRFeW9Unc2uwIszsWWNLOPhMTsYe6qhGUOukDAdRjCb9jMxSQX3fv9VOR7lPfDAHeq4IQsdWc/zZUmzfH+bmKj6xk3kHqDBhrvDwH74cFyAVFSZ4UKrVjc3v1ZBLSSwKgTyK2ekpSg9UprR5QVARcSciHAEJ3sqZvmeazFlpFqKFdZvqxCOdcJw8ul5OiNKwZBcqSqotx2ofd5BWsVsKsG1My1qMxpronYgOARp5FrwmXpHdFQrpQkec34cF88JkAy43DHgpBbDQzo8REMH9pEkHIQ03DhF88cE8uc5uRMsWAW0HQ="
+addons:
+  coverity_scan:
+    project:
+      name: "solodon4/Mach7"
+      description: "Build submitted via Travis CI"
+    notification_email: yuriy.solodkyy+coverity_scan@gmail.com
+    build_command_prepend: "make clean"
+    build_command: "make -j 4"
+    branch_pattern: coverity_scan
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - boost-latest
+    packages:
+    - g++-6
+    - libboost-dev
+before_install:
+  - cd code
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;              fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc@6;       fi
+
+install:
+    - if [ "$TRAVIS_BRANCH" = "coverity_scan" ] && ! [ "$TRAVIS_OS_NAME" = "linux" -a "$CC" = "gcc" ]; then exit ; fi
+    - if [[ "$CXX" == g++ ]]; then export CXX="g++-6"; fi
+before_script:
+    - uname -a
+    - printenv
+    - which clang++
+    - clang++ --version 2>&1 | grep clang
+    - which g++
+    - g++ --version
+    - $CXX --version
+    - sudo pip install --upgrade pip
+    - sudo pip install --upgrade cmake
+    - cmake --version
+    - sudo cmake --version
+
+script: 
+    - make --keep-going
+    - cd ..
+    - cmake -H. -Bbuild 
+    - sudo cmake --build build --target install -j 100
+notifications:
+  email:
+    recipients: yuriy.solodkyy+travis.mach7@gmail.com
+    on_success: change
+    on_failure: always
+

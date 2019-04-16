@@ -1,0 +1,63 @@
+\section{Match Statement} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:impl}
+
+Our implementation of pattern matching expressions follows the naive way of 
+essentially interpreting them through backtracking. On one hand, this was a 
+consequence of working in a library setting, where code transformations are much 
+harder to achive. On the other hand, from the very beginning we were trying to 
+find an expressive alternative to object decomposition with either nested 
+dynamic casts or visitor design pattern, and thus were not concerned with 
+pattern matching on multiple arguments, where decision tree approach becomes 
+more efficient. Dealing with single argument certainly leaves less choices for 
+optimization, but does not eliminate them as repeated use of constructor-pattern 
+with the same target type but different argument patterns essentially leads to 
+the same inefficiencies. To tackle this issue in a library setting we rely on 
+and give more control to the library user. For example, we fix the order of 
+evaluation, but let guard-patterns be placed directly on the arguments of a 
+constructor-pattern to let the user benefit from the consciesness of expression, 
+while holding a grip on performance. Similarly, we added \code{Alt} sub-clauses 
+to \code{Qua}-clause to syntactically separate fast type switching from slow 
+sequential evaluation of pattern matching expressions. The fall-through behavior 
+of the \code{Match}-statement allows the user to achieve the same effect 
+directly with \code{Qua}-clauses, however the performance overhead involved 
+justified the addition of otherwise syntactic sugar.
+
+The interpretation of pattern matching expressions with expression templates follows 
+very closely the composition of expressions described by abstract syntax 
+in~\textsection\ref{sec:syn} as well as their application to subject expression 
+described by evaluation rules in \textsection\ref{sec:semme}. This section thus
+mainly concentrates on efficient implementation of a match statement as 
+well as unification of its syntax to the three encodings of algebraic data types
+outlined in \textsection\ref{sec:adt}. The discussion will largely focus on 
+devising an efficient \emph{type-switch}, which is then used by our library as a 
+backbone to the general match statement presented in~\textsection\ref{sec:semms}. 
+
+By encoding algebraic data types with classes we alter their semantics in two 
+important ways: we make them \emph{extensible} as new variants can be added by 
+simply deriving from the base class, as well as \emph{hierarchical} as variants 
+can be inherited from other variants and thus form a subtyping relation between 
+themselves~\cite{Glew99}. This is not the case with traditional algebraic data 
+types in functional languages, where the set of variants is \emph{closed}, while 
+the variants are \emph{disjoint}. Some functional languages e.g. 
+ML2000~\cite{ML2000} and Moby~\cite{Moby} were experimenting with 
+\emph{hierarchical extensible sum types}, which are closer to object-oriented 
+classes then algebraic data types are, but, interestingly, they did not provide 
+pattern matching facilities on them. Working within a multi-paradigm  
+programming language like C++, we will not be looking at algebraic data types in
+the closed form they are present in functional languages, but rather in an 
+open/extensible form discussed by Zenger~\cite{Zenger:2001}, Emir~\cite{EmirThesis}, 
+L\"oh~\cite{LohHinze2006}, Glew~\cite{Glew99} and others. We will thus 
+assume an object-oriented setting where new variants can be added later and form
+subtyping relations between each other including those through multiple 
+inheritance. We will look separately at polymorphic and tagged class encodings 
+as our handling of these two encodings is significantly different. Before we 
+look into these differences in greater details, however, we would like to look 
+at the problem of type switching without specific implementation in mind as well 
+as properties we would like to seek from such an implementation.
+
+\input{sec-5-implementation-typeswitch-problem}
+\input{sec-5-implementation-typeswitch-tagged}
+\input{sec-5-implementation-typeswitch-memoization}
+\input{sec-5-implementation-typeswitch-exceptions}
+\input{sec-5-implementation-typeswitch-unisyn}
+\input{sec-5-implementation-typeswitch-memcast}

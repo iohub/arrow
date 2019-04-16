@@ -99,7 +99,7 @@ def build(ctx):
                     "include",
                     "vendor/mach7/code",
                     "vendor/rapidjson/include",
-                    "vendor/utfcpp/source",
+                    # "vendor/utfcpp/source",
                     "build",
                 ],
                 target="arrow",

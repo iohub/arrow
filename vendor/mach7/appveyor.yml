@@ -1,0 +1,113 @@
+# Mach7: Pattern Matching Library for C++
+#
+# Copyright 2011-2013, Texas A&M University.
+# Copyright 2014 Yuriy Solodkyy.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#
+#     * Neither the names of Mach7 project nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# NOTE: Before checking changes to this script in, validate them at:
+#       https://ci.appveyor.com/tools/validate-yaml
+
+# Boost is already installed on AppVeyor
+environment:
+  BOOST_ROOT: C:\Libraries\boost_1_69_0
+  BOOST_LIBRARYDIR: C:\Libraries\boost_1_69_0\lib64-msvc-14.0
+  matrix:
+    - toolset: 2017
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - toolset: 2015
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - toolset: 2013
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - toolset: 2012
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - toolset: 2010
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#   - toolset: 2008 - not really supported by Mach7. Just here as a reminder worker supports it
+#     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - toolset: analyze
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#   - toolset: cmake -G "MinGW Makefiles" - still configuration errors. Ignoring for now
+#   - toolset: make - make is not available via PATH variable
+
+platform:
+  - x86
+  - x64
+
+before_build:
+  # Install nuget packages used for static analysis
+  - nuget install Microsoft.CppCoreCheck -ExcludeVersion -o code\packages
+  # Remove sh.exe from the path otherwise CMake will complain:
+  # "sh.exe was found in your PATH, here: C:/Program Files/Git/usr/bin/sh.exe"
+  # and the MinGW build will not work (the Visual Studio build does not care).
+  # See http://help.appveyor.com/discussions/problems/3193-cmake-building-for-mingw-issue-with-git-shexe
+  # The entire directory containing sh.exe could be removed from the PATH environment:
+  # - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+  # However, this will also remove all other programs in this directory from the PATH.
+  # In particular "patch" is still required.
+  # So, just rename sh.exe:
+  - ren "C:\Program Files\Git\usr\bin\sh.exe" _sh.exe
+
+build_script:
+  - echo Current Directory is %CD%
+  - echo Started on %DATE% at %TIME%
+  - set
+  - cd code
+  - build.bat %Platform% %toolset%
+  - echo Finished on %DATE% at %TIME%
+  - echo Current Directory is %CD%
+
+after_build:
+  - echo Current Directory after build is %CD%
+  - if exist build-*.log                 7z a build-logs.zip    build-*.log
+  - if exist test\unit\*.nativecodeanalysis.xml    7z a analysis-logs.zip test\unit\*.nativecodeanalysis.xml test\time\*.nativecodeanalysis.xml test\compile-time\*.nativecodeanalysis.xml
+  - if exist test\build\CMakeFiles\*.log 7z a cmake-logs.zip    test\build\CMakeFiles\*.log
+  - if exist build-logs.zip    appveyor PushArtifact build-logs.zip
+  - if exist analysis-logs.zip appveyor PushArtifact analysis-logs.zip
+  - if exist cmake-logs.zip    appveyor PushArtifact cmake-logs.zip
+
+test_script:
+  - build.bat check
+  - build.bat test
+
+artifacts:
+  - path: build-logs.zip
+    name: Build Logs
+
+  - path: analysis-logs.zip
+    name: Analysis Logs
+
+  - path: cmake-logs.zip
+    name: CMake Logs
+
+  - path: failure-logs.zip
+    name: Failures Logs
+
+on_failure:
+  - echo Current Directory on failure is %CD%
+  - if exist build-*.log 7z a failure-logs.zip build-*.log
+  - if exist failure-logs.zip appveyor PushArtifact failure-logs.zip
